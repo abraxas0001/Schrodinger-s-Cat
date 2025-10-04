@@ -13,7 +13,28 @@ enforce force‑subscription, customize + sanitize captions, and keep automatic 
 <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge"/></a>
 </p>
 
+<p>
+<a href="https://heroku.com/deploy?template=https://github.com/abraxas0001/Schrodinger-s-Cat">
+  <img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy to Heroku"/>
+</a>
+</p>
+
 </div>
+
+---
+
+## 🚀 Quick Start
+
+**New to this bot?** Check out our **[📖 Setup Guide](SETUP.md)** for step-by-step instructions!
+
+**TL;DR:**
+1. Get bot token from [@BotFather](https://t.me/BotFather)
+2. Get API credentials from [my.telegram.org](https://my.telegram.org)
+3. Create MongoDB database at [MongoDB Atlas](https://mongodb.com/cloud/atlas)
+4. Copy `.env.example` to `.env` and fill in your credentials
+5. Run `python main.py` (or deploy to Heroku/Railway)
+
+Full instructions: **[SETUP.md](SETUP.md)**
 
 ---
 
@@ -93,6 +114,20 @@ Modes:
 
 ---
 ## 🚀 Deploy
+
+**👉 For detailed step-by-step instructions, see [SETUP.md](SETUP.md)**
+
+### Quick Deploy Options
+
+#### Heroku (One-Click)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/abraxas0001/Schrodinger-s-Cat)
+
+#### Railway
+1. Fork this repo
+2. [Sign up on Railway](https://railway.app)
+3. New Project → Deploy from GitHub
+4. Add environment variables
+5. Deploy!
 
 ### ⚠️ SECURITY FIRST
 
