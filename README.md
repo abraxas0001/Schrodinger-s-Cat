@@ -94,18 +94,32 @@ Modes:
 ---
 ## 🚀 Deploy
 
-### 1. Environment Variables
-Create `.env` (or set in hosting panel):
+### ⚠️ SECURITY FIRST
 
-```
-TG_BOT_TOKEN=123456:ABCDEF...
-APP_ID=123456
-API_HASH=xxxxxxxxxxxxxxxx
+**Before deploying:**
+1. **Copy `.env.example` to `.env`**
+2. **Fill in your actual credentials** (never commit `.env`!)
+3. **Verify `.gitignore` includes `.env` and `*.session`**
+
+### 1. Environment Variables
+
+**Required:**
+```bash
+TG_BOT_TOKEN=your_bot_token_from_botfather
+APP_ID=your_app_id_from_my_telegram_org
+API_HASH=your_api_hash_from_my_telegram_org
 CHANNEL_ID=-100XXXXXXXXXX          # DB channel (bot must be admin)
-DATABASE_URL=mongodb+srv://...
-DATABASE_NAME=Cluster0
-OWNER_ID=123456789
+DATABASE_URL=mongodb+srv://user:pass@cluster.mongodb.net/
+OWNER_ID=your_telegram_user_id
+```
+
+**Optional:**
+```bash
+DATABASE_NAME=FileStoreBot
 PORT=8001
+OWNER=YourUsername
+TG_BOT_WORKERS=200
+FSUB_LINK_EXPIRY=0
 ```
 
 ### 2. Docker
@@ -130,10 +144,16 @@ python main.py
 ---
 ## 🔐 Security Notes
 
-- Never commit real tokens / DB URIs (currently defaults are hard‑coded – replace them!).
-- Use a dedicated least‑privilege Mongo user.
-- Rotate OWNER_ID if handing over ownership.
-- Consider enabling Telegram 2FA on the managing account.
+- ✅ **All credentials removed from code** – Use environment variables only
+- ✅ **Never commit `.env`, `*.session`, or `config.py` with real values**
+- ✅ Use a dedicated least‑privilege MongoDB user
+- ✅ Rotate `OWNER_ID` if handing over ownership
+- ✅ Enable Telegram 2FA on the managing account
+- ✅ Review `.gitignore` before pushing changes
+- ⚠️ **If you previously committed credentials, rotate them immediately:**
+  - Generate new bot token via @BotFather (`/revoke`)
+  - Create new MongoDB user/password
+  - Regenerate API credentials at my.telegram.org
 
 ---
 ## 🛠 Admin Command Cheat Sheet
