@@ -25,7 +25,9 @@ enforce force‑subscription, customize + sanitize captions, and keep automatic 
 
 ## 🚀 Quick Start
 
-**New to this bot?** Check out our **[📖 Setup Guide](SETUP.md)** for step-by-step instructions!
+**First time?** → **[⚡ QUICKSTART.md](QUICKSTART.md)** ← 2-minute setup guide!
+
+**Need details?** → **[📖 SETUP.md](SETUP.md)** ← Full step-by-step instructions
 
 **TL;DR:**
 1. Get bot token from [@BotFather](https://t.me/BotFather)
