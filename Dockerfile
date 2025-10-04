@@ -1,12 +1,12 @@
 FROM python:3.10-slim
 WORKDIR /app
 
-# Install MongoDB tools for backups
-RUN apt-get update && apt-get install -y mongodb-clients && rm -rf /var/lib/apt/lists/*
-
+# Copy requirements and install dependencies
 COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
 
-CMD python3 main.py
+# Run the bot
+CMD ["python3", "main.py"]
