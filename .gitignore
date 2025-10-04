@@ -138,3 +138,16 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Bot-specific sensitive files
+*.session
+*.session-journal
+Bot.session*
+bot.log
+*.log
+.env
+config.env
+
+# Backups and temporary files
+backups/
+*.json
+*.zip

@@ -6,19 +6,19 @@ from logging.handlers import RotatingFileHandler
 
 #--------------------------------------------
 #Bot token @Botfather
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8246304622:AAGFQFshO2yqDjeiGRVrGRZMICw0plZDGxc")
-APP_ID = int(os.environ.get("APP_ID", "20938114")) #Your API ID from my.telegram.org
-API_HASH = os.environ.get("API_HASH", "34c67040802ad3580571f98d23901274") #Your API Hash from my.telegram.org
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "") # Get from @BotFather
+APP_ID = int(os.environ.get("APP_ID", "0")) # Get from my.telegram.org
+API_HASH = os.environ.get("API_HASH", "") # Get from my.telegram.org
 #--------------------------------------------
 
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002012729749")) #Your db channel Id
-OWNER = os.environ.get("OWNER", "johnsonsbabe") # Owner username without @
-OWNER_ID = int(os.environ.get("OWNER_ID", "1993687549")) # Owner id
+CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "0")) # Your DB channel ID (must be negative for supergroups/channels)
+OWNER = os.environ.get("OWNER", "YourUsername") # Owner username without @
+OWNER_ID = int(os.environ.get("OWNER_ID", "0")) # Your Telegram user ID
 #--------------------------------------------
 PORT = os.environ.get("PORT", "8001")
 #--------------------------------------------
-DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://abraxas00010001:Abra321@cluster0.salznxj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-DB_NAME = os.environ.get("DATABASE_NAME", "Cluster0")
+DB_URI = os.environ.get("DATABASE_URL", "") # MongoDB connection string
+DB_NAME = os.environ.get("DATABASE_NAME", "FileStoreBot") # Database name
 #--------------------------------------------
 FSUB_LINK_EXPIRY = int(os.getenv("FSUB_LINK_EXPIRY", "0"))  # 0 means no expiry
 BAN_SUPPORT = os.environ.get("BAN_SUPPORT", "https://t.me/neel_leen")
