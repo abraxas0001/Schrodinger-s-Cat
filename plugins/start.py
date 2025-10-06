@@ -180,7 +180,7 @@ async def start_command(client: Client, message: Message):
 
     [
                     InlineKeyboardButton("• ᴅɪsᴄʟᴀɪᴍᴇʀ", callback_data = "about"),
-                    InlineKeyboardButton('ᴄʀᴇᴀᴛᴏʀ •', url= "https://t.me/chexyy")
+                    InlineKeyboardButton('ᴄʀᴇᴀᴛᴏʀ •', url= "https://t.me/LordShekhar")
 
     ]
             ]
