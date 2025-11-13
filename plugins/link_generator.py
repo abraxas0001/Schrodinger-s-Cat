@@ -86,11 +86,11 @@ async def batch(client: Client, message: Message):
     base64_string = await encode(string)
     link = f"https://t.me/{client.username}?start={base64_string}"
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-    await message.reply_text(
-        f"<b>Here is your link</b>\n\n{link}",
+    await second_message.reply_text(
+        f"<b>✅ Here is your batch link</b>\n\n{link}",
         reply_markup=reply_markup
     )
-    await message.reply("✅ Done.", reply_markup=ReplyKeyboardRemove())
+    await message.reply("✅ Batch complete.", reply_markup=ReplyKeyboardRemove())
 
 
 @Bot.on_message(filters.private & admin & filters.command('genlink'))
@@ -166,10 +166,8 @@ async def custom_batch(client: Client, message: Message):
         await message.reply("❌ Custom batch cancelled.", reply_markup=ReplyKeyboardRemove())
         return
 
-    await message.reply("✅ Batch collection complete.", reply_markup=ReplyKeyboardRemove())
-
     if not collected:
-        await message.reply("❌ No messages were added to batch.")
+        await message.reply("❌ No messages were added to batch.", reply_markup=ReplyKeyboardRemove())
         return
 
     start_id = collected[0] * abs(client.db_channel.id)
@@ -179,4 +177,5 @@ async def custom_batch(client: Client, message: Message):
     link = f"https://t.me/{client.username}?start={base64_string}"
 
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-    await message.reply(f"<b>Here is your custom batch link:</b>\n\n{link}", reply_markup=reply_markup)
+    await message.reply(f"<b>✅ Here is your custom batch link:</b>\n\n{link}", reply_markup=reply_markup)
+    await message.reply("✅ Done.", reply_markup=ReplyKeyboardRemove())
