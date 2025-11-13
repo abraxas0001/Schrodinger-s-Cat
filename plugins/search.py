@@ -73,11 +73,16 @@ async def search_files(client: Client, query: str, limit=1000):
     # Split query into words for multi-word search
     query_words = [w.strip() for w in search_query.split() if w.strip()]
     
+    total_media_count = 0
+    checked_files = []
+    
     try:
         # Get all messages from database channel
         async for msg in client.get_chat_history(client.db_channel.id, limit=limit):
             if not msg.media:
                 continue
+            
+            total_media_count += 1
             
             relevance_score = 0
             caption_text = msg.caption or ""
@@ -92,6 +97,10 @@ async def search_files(client: Client, query: str, limit=1000):
                 file_name = msg.audio.file_name
             elif msg.audio and msg.audio.title:
                 file_name = msg.audio.title
+            
+            # Debug: Store sample filenames
+            if total_media_count <= 5:
+                checked_files.append(file_name or f"No filename (caption: {caption_text[:30]})")
             
             # Calculate relevance for filename
             if file_name:
@@ -137,6 +146,10 @@ async def search_files(client: Client, query: str, limit=1000):
     
     except Exception as e:
         print(f"Search error: {e}")
+    
+    # Debug logging
+    print(f"Search query: '{query}' | DB Channel ID: {client.db_channel.id} | Total media: {total_media_count} | Matches: {len(results)}")
+    print(f"Sample files checked: {checked_files[:5]}")
     
     # Sort by relevance score (highest first)
     results.sort(key=lambda x: x['relevance'], reverse=True)
@@ -219,7 +232,8 @@ async def search_handler(client: Client, message: Message):
                 f"💡 <b>Search Tips:</b>\n"
                 f"• Try different keywords\n"
                 f"• Use fewer words\n"
-                f"• Check spelling"
+                f"• Check spelling\n\n"
+                f"<i>Searched through recent messages in database channel</i>"
             )
             return
         
