@@ -75,6 +75,7 @@ DISABLE_CHANNEL_BUTTON = os.environ.get("DISABLE_CHANNEL_BUTTON",None) == 'False
 CUSTOM_BATCH_CONCURRENCY = int(os.environ.get("CUSTOM_BATCH_CONCURRENCY", "6"))
 CUSTOM_BATCH_MAX_RETRIES = int(os.environ.get("CUSTOM_BATCH_MAX_RETRIES", "20"))
 CUSTOM_BATCH_SEQUENTIAL_RETRIES = int(os.environ.get("CUSTOM_BATCH_SEQUENTIAL_RETRIES", "10"))
+CUSTOM_BATCH_RECOPY_MODE = os.environ.get("CUSTOM_BATCH_RECOPY_MODE", "ask").lower()  # ask | allow | deny
 #--------------------------------------------
 BOT_STATS_TEXT = "<b>BOT UPTIME</b>\n{uptime}"
 USER_REPLY_TEXT = "ʙᴀᴋᴋᴀ ! ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴍʏ ꜱᴇɴᴘᴀɪ!!"

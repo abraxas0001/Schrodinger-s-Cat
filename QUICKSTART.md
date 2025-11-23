@@ -109,6 +109,9 @@ Schrodinger-s-Cat/
 
 1. ✅ Send a file to your database channel
 2. ✅ Forward it to bot (as admin)
+4. ✅ Use `/custom_batch` to create batch links by forwarding DB channel posts.
+    - The command expects messages forwarded from your DB channel. If you forward a message that isn't in the DB channel, the bot will ask permission to copy it into the DB channel and include it in the batch by default.
+    - To change this behavior, set the environment variable `CUSTOM_BATCH_RECOPY_MODE` to `ask` (default), `allow` (always copy), or `deny` (never copy).
 3. ✅ Bot will give you a shareable link
 4. ✅ Share the link with users
 5. ✅ Configure features with admin commands

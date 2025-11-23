@@ -65,6 +65,7 @@ This bot acts as a **content gateway**: you drop files into a private channel (D
 | Admin Management | Multi‑admin support | `/add_admin`, `/deladmin`, `/admins` |
 | User Control | Ban / Unban / Ban list | `/ban`, `/unban`, `/banlist` |
 | Backups | Daily + on‑demand Mongo export (JSON/BSON fallback) | `/backup` |
+| Custom Batch | Create a batch deep link by forwarding multiple DB channel messages (or copy non-DB messages to DB with confirmation) | `/custom_batch` |
 
 ---
 ## 🧠 Caption Mutation Pipeline
@@ -210,6 +211,7 @@ python main.py
 /ban /unban /banlist
 /add_admin /deladmin /admins
 /backup
+ /custom_batch          # Create a batch deep link by forwarding multiple DB channel messages (or copy non-DB messages to DB with confirmation)
 ```
 
 ---
