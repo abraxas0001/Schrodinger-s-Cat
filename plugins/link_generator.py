@@ -5,7 +5,7 @@ from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from bot import Bot
-from helper_func import encode, get_message_id, admin, interactive_users
+from helper_func import encode, get_message_id, admin, interactive_users, get_flood_wait_seconds
 
 
 @Bot.on_message(filters.private & admin & filters.command('batch'))
@@ -160,22 +160,10 @@ async def custom_batch(client: Client, message: Message):
                 cancelled = True
                 break
 
-            try:
-                while True:
-                    try:
-                        sent = await user_msg.copy(client.db_channel.id, disable_notification=True)
-                        seq += 1
-                        collected.append((seq, sent.id))
-                        await asyncio.sleep(0.4)  # small delay to prevent flood
-                        break
-                    except FloodWait as e:
-                        wait_time = int(getattr(e, "value", 1))
-                        await asyncio.sleep(wait_time)
-                    except Exception as e:
-                        await message.reply(f"❌ Failed to store a message:\n<code>{e}</code>")
-                        break
-            except Exception as e:
-                await message.reply(f"❌ Error:\n<code>{e}</code>")
+            # Collect user messages to copy later in bulk (preserve order)
+            seq += 1
+            collected.append((seq, user_msg))
+            # end: collecting user messages
 
         if cancelled:
             await message.reply("❌ Custom batch cancelled.", reply_markup=ReplyKeyboardRemove())
@@ -184,12 +172,34 @@ async def custom_batch(client: Client, message: Message):
         if not collected:
             await message.reply("❌ No messages were added to batch.", reply_markup=ReplyKeyboardRemove())
             return
-        # Sort collected according to the original sending order (seq)
-        collected.sort(key=lambda x: x[0])
-        collected_ids = [item[1] for item in collected]
+        # Copy all collected messages concurrently with limited concurrency and retry on FloodWait
+        async def copy_worker(seq_num, usr_msg, sem, max_retries=3):
+            attempts = 0
+            while True:
+                try:
+                    async with sem:
+                        sent = await usr_msg.copy(client.db_channel.id, disable_notification=True)
+                        return seq_num, sent.id
+                except FloodWait as e:
+                    await asyncio.sleep(get_flood_wait_seconds(e))
+                except Exception as e:
+                    attempts += 1
+                    if attempts >= max_retries:
+                        return seq_num, None
+                    await asyncio.sleep(1)
 
-        start_id = collected_ids[0] * abs(client.db_channel.id)
-        end_id = collected_ids[-1] * abs(client.db_channel.id)
+        sem = asyncio.Semaphore(5)
+        tasks = [asyncio.create_task(copy_worker(s, m, sem)) for (s, m) in collected]
+        results = await asyncio.gather(*tasks)
+        # Keep only successful copies and sort by sequence
+        results = [r for r in results if r and r[1] is not None]
+        if not results:
+            await message.reply("❌ Failed to store any messages to DB Channel.", reply_markup=ReplyKeyboardRemove())
+            return
+        results.sort(key=lambda x: x[0])
+        copied_ids = [item[1] for item in results]
+        start_id = copied_ids[0] * abs(client.db_channel.id)
+        end_id = copied_ids[-1] * abs(client.db_channel.id)
         string = f"get-{start_id}-{end_id}"
         base64_string = await encode(string)
         link = f"https://t.me/{client.username}?start={base64_string}"

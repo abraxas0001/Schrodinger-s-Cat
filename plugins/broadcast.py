@@ -9,6 +9,7 @@ from pyrogram.enums import ParseMode, ChatAction
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, ReplyKeyboardMarkup, ChatInviteLink, ChatPrivileges
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserNotParticipant
+from helper_func import get_flood_wait_seconds
 from bot import Bot
 from config import *
 from helper_func import *
@@ -41,7 +42,7 @@ async def send_pin_text(client: Bot, message: Message):
                 await client.pin_chat_message(chat_id=chat_id, message_id=sent_msg.id, both_sides=True)
                 successful += 1
             except FloodWait as e:
-                await asyncio.sleep(e.x)
+                await asyncio.sleep(get_flood_wait_seconds(e))
                 sent_msg = await broadcast_msg.copy(chat_id)
                 await client.pin_chat_message(chat_id=chat_id, message_id=sent_msg.id, both_sides=True)
                 successful += 1
@@ -91,7 +92,7 @@ async def send_text(client: Bot, message: Message):
                 await broadcast_msg.copy(chat_id)
                 successful += 1
             except FloodWait as e:
-                await asyncio.sleep(e.x)
+                await asyncio.sleep(get_flood_wait_seconds(e))
                 await broadcast_msg.copy(chat_id)
                 successful += 1
             except UserIsBlocked:
@@ -148,7 +149,7 @@ async def delete_broadcast(client: Bot, message: Message):
                 await sent_msg.delete()  # Delete the message after the duration
                 successful += 1
             except FloodWait as e:
-                await asyncio.sleep(e.x)
+                await asyncio.sleep(get_flood_wait_seconds(e))
                 sent_msg = await broadcast_msg.copy(chat_id)
                 await asyncio.sleep(duration)
                 await sent_msg.delete()

@@ -94,7 +94,9 @@ async def get_messages(client, message_ids):
                 message_ids=temb_ids
             )
         except FloodWait as e:
-            await asyncio.sleep(e.x)
+            # e may have different attribute names depending on pyrogram version
+            wait = int(getattr(e, 'value', getattr(e, 'x', getattr(e, 'wait', 1))))
+            await asyncio.sleep(wait)
             msgs = await client.get_messages(
                 chat_id=client.db_channel.id,
                 message_ids=temb_ids
@@ -166,5 +168,9 @@ admin = filters.create(check_admin)
 
 # Users currently in interactive ask flows (suppress search handler for these users)
 interactive_users = set()
+
+def get_flood_wait_seconds(e):
+    """Return required wait seconds from FloodWait exception object in a robust way."""
+    return int(getattr(e, 'value', getattr(e, 'x', getattr(e, 'wait', 1))))
 
 #neel_leen on Tg :

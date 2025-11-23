@@ -2,6 +2,7 @@ import asyncio
 from pyrogram import filters, Client
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait
+from helper_func import get_flood_wait_seconds
 
 from bot import Bot
 from config import *
@@ -13,7 +14,8 @@ async def channel_post(client: Client, message: Message):
     try:
         post_message = await message.copy(chat_id = client.db_channel.id, disable_notification=True)
     except FloodWait as e:
-        await asyncio.sleep(e.x)
+        wait_time = get_flood_wait_seconds(e)
+        await asyncio.sleep(wait_time)
         post_message = await message.copy(chat_id = client.db_channel.id, disable_notification=True)
     except Exception as e:
         print(e)
