@@ -196,6 +196,10 @@ async def search_handler(client: Client, message: Message):
     if message.from_user.id in interactive_users:
         # Silently skip processing during ask flows (user is in a batch/genlink session)
         return
+    # Extra guard: ignore STOP/CANCEL commands typed by users (these are control texts, not searches)
+    stop_texts = {"STOP", "STOP BATCH", "CANCEL", "CANCEL BATCH"}
+    if message.text and message.text.strip().upper() in stop_texts:
+        return
 
     # Check if user is banned
     banned_users = await db.get_ban_users()

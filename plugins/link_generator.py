@@ -183,6 +183,18 @@ async def custom_batch(client: Client, message: Message):
                 try:
                     async with sem:
                         sent = await usr_msg.copy(client.db_channel.id, disable_notification=True)
+                        # Attach per-message share button for this specific copy (if enabled)
+                        if not DISABLE_CHANNEL_BUTTON:
+                            try:
+                                converted_id_single = sent.id * abs(client.db_channel.id)
+                                base64_single = await encode(f"get-{converted_id_single}")
+                                share_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url=https://t.me/{client.username}?start={base64_single}')]])
+                                await client.edit_message_reply_markup(client.db_channel.id, sent.id, reply_markup=share_markup)
+                            except FloodWait as e:
+                                await asyncio.sleep(get_flood_wait_seconds(e))
+                            except Exception:
+                                # ignore per-message edit failures
+                                pass
                         return seq_num, sent.id
                 except FloodWait as e:
                     # sleep required Telegram specified time (robust attribute access)
