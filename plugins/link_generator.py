@@ -174,24 +174,77 @@ async def custom_batch(client: Client, message: Message):
             await message.reply("❌ No messages were added to batch.", reply_markup=ReplyKeyboardRemove())
             return
         # Copy all collected messages concurrently with limited concurrency and retry on FloodWait
-        async def copy_worker(seq_num, usr_msg, sem, max_retries=3):
+        async def copy_worker(seq_num, usr_msg, sem, max_retries=20):
+            # Strong retry strategy: flood waits are handled by sleeping required time
+            # Non-Flood exceptions are retried with exponential backoff
             attempts = 0
+            backoff = 1
             while True:
                 try:
                     async with sem:
                         sent = await usr_msg.copy(client.db_channel.id, disable_notification=True)
                         return seq_num, sent.id
                 except FloodWait as e:
+                    # sleep required Telegram specified time (robust attribute access)
                     await asyncio.sleep(get_flood_wait_seconds(e))
+                    # continue retrying until success
                 except Exception as e:
                     attempts += 1
                     if attempts >= max_retries:
                         return seq_num, None
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(backoff)
+                    backoff = min(backoff * 2, 20)
 
-        sem = asyncio.Semaphore(5)
+        sem = asyncio.Semaphore(6)
         tasks = [asyncio.create_task(copy_worker(s, m, sem)) for (s, m) in collected]
-        results = await asyncio.gather(*tasks)
+        total = len(tasks)
+        success = 0
+        failed = []
+        results = []
+
+        progress_msg = await message.reply(f"📤 Copying files to DB Channel: 0/{total}")
+        for coro in asyncio.as_completed(tasks):
+            try:
+                seq_num, mid = await coro
+            except Exception:
+                continue
+            if mid:
+                results.append((seq_num, mid))
+                success += 1
+            else:
+                failed.append(seq_num)
+            # Update progress message every few updates
+            if (success + len(failed)) % 5 == 0 or (success + len(failed)) == total:
+                await progress_msg.edit(f"📤 Copying files to DB Channel: {success}/{total} (Failed: {len(failed)})")
+        # If there are failed copies, attempt sequential retry to reduce missing items
+        if failed:
+            await progress_msg.edit(f"🔁 Retrying failed {len(failed)} files sequentially...")
+            for seq_num in failed:
+                usr_msg = next((m for (s, m) in collected if s == seq_num), None)
+                if not usr_msg:
+                    continue
+                seq_res = None
+                attempts = 0
+                backoff = 1
+                while attempts < 10:
+                    try:
+                        sent = await usr_msg.copy(client.db_channel.id, disable_notification=True)
+                        seq_res = (seq_num, sent.id)
+                        results.append(seq_res)
+                        break
+                    except FloodWait as e:
+                        await asyncio.sleep(get_flood_wait_seconds(e))
+                    except Exception:
+                        attempts += 1
+                        await asyncio.sleep(backoff)
+                        backoff = min(backoff * 2, 20)
+                if not seq_res:
+                    # keep track of which seqs still have failed
+                    pass
+                else:
+                    # remove seq_num from failed if succeeded
+                    if seq_num in failed:
+                        failed.remove(seq_num)
         # Keep only successful copies and sort by sequence
         results = [r for r in results if r and r[1] is not None]
         if not results:
@@ -223,6 +276,10 @@ async def custom_batch(client: Client, message: Message):
                             break
                     except Exception:
                         break
+        await progress_msg.edit(f"✅ Done. Copied: {len(results)}/{total} items. Failed: {len(failed)}")
+        if failed:
+            failed_str = ', '.join(str(s) for s in failed[:30])
+            await message.reply(f"⚠️ Failed to copy {len(failed)} items (seq numbers): {failed_str}")
         await message.reply("✅ Done.", reply_markup=ReplyKeyboardRemove())
     finally:
         interactive_users.discard(uid)
