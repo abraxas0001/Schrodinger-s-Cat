@@ -101,8 +101,6 @@ async def start_command(client: Client, message: Message):
             except Exception as e:
                 print(f"Error decoding bulk: {e}")
                 return
-        else:
-            return
         elif len(argument) == 3 and argument[0] == "get":
             # old range format
             try:
