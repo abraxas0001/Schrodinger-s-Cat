@@ -161,9 +161,13 @@ async def custom_batch(client: Client, message: Message):
                 cancelled = True
                 break
 
-            # Collect user messages to copy later in bulk (preserve order)
+            # Collect message ID from DB channel (forwarded message or channel link)
+            msg_id = await get_message_id(client, user_msg)
+            if not msg_id:
+                await user_msg.reply("❌ Please forward a message from the DB Channel (or send the channel link)", quote=True)
+                continue
             seq += 1
-            collected.append((seq, user_msg))
+            collected.append((seq, msg_id))
             # end: collecting user messages
 
         if cancelled:
@@ -207,56 +211,10 @@ async def custom_batch(client: Client, message: Message):
                     await asyncio.sleep(backoff)
                     backoff = min(backoff * 2, 20)
 
-        sem = asyncio.Semaphore(CUSTOM_BATCH_CONCURRENCY)
-        tasks = [asyncio.create_task(copy_worker(s, m, sem)) for (s, m) in collected]
-        total = len(tasks)
-        success = 0
+        # We already collected DB message ids; results are the collected IDs in original order
+        results = list(collected)
+        total = len(results)
         failed = []
-        results = []
-
-        progress_msg = await message.reply(f"📤 Copying files to DB Channel: 0/{total}")
-        for coro in asyncio.as_completed(tasks):
-            try:
-                seq_num, mid = await coro
-            except Exception:
-                continue
-            if mid:
-                results.append((seq_num, mid))
-                success += 1
-            else:
-                failed.append(seq_num)
-            # Update progress message every few updates
-            if (success + len(failed)) % 5 == 0 or (success + len(failed)) == total:
-                await progress_msg.edit(f"📤 Copying files to DB Channel: {success}/{total} (Failed: {len(failed)})")
-        # If there are failed copies, attempt sequential retry to reduce missing items
-        if failed:
-            await progress_msg.edit(f"🔁 Retrying failed {len(failed)} files sequentially...")
-            for seq_num in failed:
-                usr_msg = next((m for (s, m) in collected if s == seq_num), None)
-                if not usr_msg:
-                    continue
-                seq_res = None
-                attempts = 0
-                backoff = 1
-                while attempts < CUSTOM_BATCH_SEQUENTIAL_RETRIES:
-                    try:
-                        sent = await usr_msg.copy(client.db_channel.id, disable_notification=True)
-                        seq_res = (seq_num, sent.id)
-                        results.append(seq_res)
-                        break
-                    except FloodWait as e:
-                        await asyncio.sleep(get_flood_wait_seconds(e))
-                    except Exception:
-                        attempts += 1
-                        await asyncio.sleep(backoff)
-                        backoff = min(backoff * 2, 20)
-                if not seq_res:
-                    # keep track of which seqs still have failed
-                    pass
-                else:
-                    # remove seq_num from failed if succeeded
-                    if seq_num in failed:
-                        failed.remove(seq_num)
         # Keep only successful copies and sort by sequence
         results = [r for r in results if r and r[1] is not None]
         if not results:
@@ -288,7 +246,7 @@ async def custom_batch(client: Client, message: Message):
                             break
                     except Exception:
                         break
-        await progress_msg.edit(f"✅ Done. Copied: {len(results)}/{total} items. Failed: {len(failed)}")
+        await message.reply(f"✅ Done. Registered {len(results)}/{total} items. Failed: {len(failed)}")
         if failed:
             failed_str = ', '.join(str(s) for s in failed[:30])
             await message.reply(f"⚠️ Failed to copy {len(failed)} items (seq numbers): {failed_str}")
