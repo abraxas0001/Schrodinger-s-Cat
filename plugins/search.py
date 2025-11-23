@@ -73,8 +73,7 @@ async def search_files(client: Client, query: str, limit=1000):
     # Split query into words for multi-word search
     query_words = [w.strip() for w in search_query.split() if w.strip()]
     
-    total_media_count = 0
-    checked_files = []
+    # counters removed - not logging in production
     
     try:
         # Get all messages from database channel
@@ -98,9 +97,6 @@ async def search_files(client: Client, query: str, limit=1000):
             elif msg.audio and msg.audio.title:
                 file_name = msg.audio.title
             
-            # Debug: Store sample filenames
-            if total_media_count <= 5:
-                checked_files.append(file_name or f"No filename (caption: {caption_text[:30]})")
             
             # Calculate relevance for filename
             if file_name:
@@ -147,9 +143,7 @@ async def search_files(client: Client, query: str, limit=1000):
     except Exception as e:
         print(f"Search error: {e}")
     
-    # Debug logging
-    print(f"Search query: '{query}' | DB Channel ID: {client.db_channel.id} | Total media: {total_media_count} | Matches: {len(results)}")
-    print(f"Sample files checked: {checked_files[:5]}")
+    # No debug prints - production ready
     
     # Sort by relevance score (highest first)
     results.sort(key=lambda x: x['relevance'], reverse=True)
@@ -232,13 +226,79 @@ async def search_handler(client: Client, message: Message):
                 f"💡 <b>Search Tips:</b>\n"
                 f"• Try different keywords\n"
                 f"• Use fewer words\n"
-                f"• Check spelling\n\n"
-                f"<i>Searched through recent messages in database channel</i>"
+                f"• Check spelling"
             )
             return
         
         # Limit to top 100 most relevant results
         results = results[:100]
+
+        # If there's exactly one result, auto-deliver the file (previous behavior: send directly)
+        if len(results) == 1:
+            item = results[0]
+            try:
+                msg = await client.get_messages(client.db_channel.id, item['msg_id'])
+                if not msg or not msg.media:
+                    await progress_msg.edit("❌ File not found in database.")
+                    return
+                # Apply caption transformations same as file_callback
+                protect_content = await db.get_protect_content()
+                replace_old, replace_new = await db.get_caption_replace()
+                global_cap_text, global_cap_enabled = await db.get_global_caption()
+                link_old, link_new = await db.get_link_replace()
+                all_link, all_link_enabled = await db.get_replace_all_link()
+                caption_append = await db.get_caption_append()
+                strip_links = await db.get_caption_strip()
+
+                original_caption = msg.caption or ""
+                if strip_links and original_caption:
+                    ANCHOR_TAG_REGEX = re.compile(r'<a\b[^>]*>.*?</a>', re.IGNORECASE | re.DOTALL)
+                    BRACKETED_LINK_REGEX = re.compile(r'\(\s*https?://[^)]+\)', re.IGNORECASE)
+                    LINK_REGEX = re.compile(r'https?://[^\s]+')
+                    cleaned_caption = ANCHOR_TAG_REGEX.sub('', original_caption)
+                    cleaned_caption = BRACKETED_LINK_REGEX.sub('', cleaned_caption)
+                    cleaned_caption = LINK_REGEX.sub('', cleaned_caption)
+                    cleaned_caption = re.sub(r'\(\s*\)', '', cleaned_caption)
+                    cleaned_caption = re.sub(r' {2,}', ' ', cleaned_caption)
+                    cleaned_caption = re.sub(r'(\n\s*){2,}', '\n', cleaned_caption)
+                    cleaned_caption = re.sub(r'\s*\n\s*', '\n', cleaned_caption)
+                    original_caption = cleaned_caption.strip()
+
+                caption = original_caption
+                if not caption and global_cap_enabled and global_cap_text:
+                    caption = global_cap_text
+                if caption:
+                    if replace_old:
+                        caption = caption.replace(replace_old, replace_new)
+                    if link_old:
+                        caption = caption.replace(link_old, link_new)
+                    if all_link_enabled and all_link:
+                        LINK_REGEX = re.compile(r'https?://[^\s]+')
+                        caption = LINK_REGEX.sub(all_link, caption)
+                    if caption_append:
+                        caption = f"{caption}\n{caption_append}"
+
+                caption_to_send = caption or None
+
+                CUSTOM_BUTTON = InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("𝗰𝗹𝗶𝗰𝗸 𝗵𝗲𝗿𝗲 𝗳𝗼𝗿 𝗺𝗼𝗿𝗲 ❤️", url="https://t.me/HxHLinks")]]
+                )
+
+                copy_kwargs = {
+                    'chat_id': user_id,
+                    'reply_markup': CUSTOM_BUTTON,
+                    'protect_content': protect_content
+                }
+                if caption_to_send:
+                    copy_kwargs['caption'] = caption_to_send
+                    copy_kwargs['parse_mode'] = ParseMode.HTML
+
+                await msg.copy(**copy_kwargs)
+                await progress_msg.edit("✅ File delivered.")
+            except Exception as e:
+                await progress_msg.edit(f"❌ Failed to deliver file: {e}")
+                print(f"File delivery error (auto): {e}")
+            return
         
         # Store results in cache
         search_cache[user_id] = results
