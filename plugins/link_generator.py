@@ -246,21 +246,7 @@ async def bulk_custom_batch(client: Client, message: Message):
                 await user_msg.reply("❌ Please send media files only (photos, videos, documents, etc.)", quote=True)
                 continue
 
-            try:
-                while True:
-                    try:
-                        sent = await user_msg.copy(client.db_channel.id, disable_notification=True)
-                        collected.append(sent.id)
-                        await asyncio.sleep(0.4)  # small delay to prevent flood
-                        break
-                    except FloodWait as e:
-                        wait_time = int(getattr(e, "value", 1))
-                        await asyncio.sleep(wait_time)
-                    except Exception as e:
-                        await user_msg.reply(f"❌ Failed to forward media:\n<code>{e}</code>", quote=True)
-                        break
-            except Exception as e:
-                await user_msg.reply(f"❌ Error processing media:\n<code>{e}</code>", quote=True)
+            collected.append(user_msg.id)
 
         if cancelled:
             await message.reply("❌ Bulk custom batch cancelled.", reply_markup=ReplyKeyboardRemove())
@@ -275,27 +261,16 @@ async def bulk_custom_batch(client: Client, message: Message):
         # Sort collected IDs to ensure proper order
         collected.sort()
 
-        encoded_ids = '-'.join(str(i * abs(client.db_channel.id)) for i in collected)
-        string = f"batch-{encoded_ids}"
+        encoded_ids = '-'.join(str(i) for i in collected)
+        string = f"bulk-{message.chat.id}-{encoded_ids}"
         base64_string = await encode(string)
         link = f"https://t.me/{client.username}?start={base64_string}"
 
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
 
-        # Attach share URL inline button to each forwarded message in DB channel (if enabled)
-        if not DISABLE_CHANNEL_BUTTON:
-            for mid in collected:
-                try:
-                    await client.edit_message_reply_markup(client.db_channel.id, mid, reply_markup=reply_markup)
-                except FloodWait as e:
-                    await asyncio.sleep(get_flood_wait_seconds(e))
-                except Exception:
-                    pass
-
         await message.reply(
             f"<b>✅ Bulk Custom Batch Complete!</b>\n\n"
-            f"📊 Media forwarded: {len(collected)} files\n"
-            f"📁 Database Channel: @{client.db_channel.username or client.db_channel.title}\n\n"
+            f"📊 Media collected: {len(collected)} files\n\n"
             f"🔗 <b>Shareable Batch Link:</b>\n{link}",
             reply_markup=reply_markup
         )
