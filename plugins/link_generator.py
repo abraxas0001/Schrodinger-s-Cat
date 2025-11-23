@@ -205,6 +205,99 @@ async def custom_batch(client: Client, message: Message):
                 except Exception:
                     pass
 
-        await message.reply("✅ Done.")
+@Bot.on_message(filters.private & admin & filters.command("bulk_custom_batch"))
+async def bulk_custom_batch(client: Client, message: Message):
+    collected = []
+    uid = message.from_user.id
+    interactive_users.add(uid)
+    try:
+        BATCH_KB = ReplyKeyboardMarkup([["STOP BATCH", "CANCEL BATCH"]], resize_keyboard=True)
+
+        await message.reply(
+            "Send all media files you want to include in the bulk batch.\nPress STOP BATCH to finish or CANCEL BATCH to abort.\n\nAll media will be forwarded to the database channel.",
+            reply_markup=BATCH_KB
+        )
+
+        cancelled = False
+        while True:
+            try:
+                user_msg = await client.ask(
+                    chat_id=message.chat.id,
+                    text="Waiting for media... (STOP BATCH to finish / CANCEL BATCH to abort)",
+                    timeout=90
+                )
+            except asyncio.TimeoutError:
+                # Timeout ends collection
+                break
+
+            txt = (user_msg.text or '').strip().upper() if user_msg.text else ''
+            if txt in ("STOP", "STOP BATCH"):
+                break
+            if txt in ("CANCEL", "CANCEL BATCH"):
+                cancelled = True
+                break
+
+            # Check if it's media
+            if not (user_msg.photo or user_msg.video or user_msg.document or user_msg.audio or user_msg.voice or user_msg.animation):
+                await user_msg.reply("❌ Please send media files only (photos, videos, documents, etc.)", quote=True)
+                continue
+
+            try:
+                while True:
+                    try:
+                        sent = await user_msg.copy(client.db_channel.id, disable_notification=True)
+                        collected.append(sent.id)
+                        await asyncio.sleep(0.4)  # small delay to prevent flood
+                        break
+                    except FloodWait as e:
+                        wait_time = int(getattr(e, "value", 1))
+                        await asyncio.sleep(wait_time)
+                    except Exception as e:
+                        await user_msg.reply(f"❌ Failed to forward media:\n<code>{e}</code>", quote=True)
+                        break
+            except Exception as e:
+                await user_msg.reply(f"❌ Error processing media:\n<code>{e}</code>", quote=True)
+
+        if cancelled:
+            await message.reply("❌ Bulk custom batch cancelled.", reply_markup=ReplyKeyboardRemove())
+            return
+
+        await message.reply("✅ Bulk batch collection complete.", reply_markup=ReplyKeyboardRemove())
+
+        if not collected:
+            await message.reply("❌ No media was forwarded to the batch.")
+            return
+
+        # Sort collected IDs to ensure proper order
+        collected.sort()
+
+        start_id = collected[0] * abs(client.db_channel.id)
+        end_id = collected[-1] * abs(client.db_channel.id)
+        string = f"get-{start_id}-{end_id}"
+        base64_string = await encode(string)
+        link = f"https://t.me/{client.username}?start={base64_string}"
+
+        reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
+
+        # Attach share URL inline button to each forwarded message in DB channel (if enabled)
+        if not DISABLE_CHANNEL_BUTTON:
+            for mid in collected:
+                try:
+                    await client.edit_message_reply_markup(client.db_channel.id, mid, reply_markup=reply_markup)
+                except FloodWait as e:
+                    await asyncio.sleep(get_flood_wait_seconds(e))
+                except Exception:
+                    pass
+
+        await message.reply(
+            f"<b>✅ Bulk Custom Batch Complete!</b>\n\n"
+            f"📊 Media forwarded: {len(collected)} files\n"
+            f"📁 Database Channel: @{client.db_channel.username or client.db_channel.title}\n\n"
+            f"🔗 <b>Shareable Batch Link:</b>\n{link}",
+            reply_markup=reply_markup
+        )
+
+    except Exception as e:
+        await message.reply(f"❌ An error occurred: {e}")
     finally:
         interactive_users.discard(uid)
