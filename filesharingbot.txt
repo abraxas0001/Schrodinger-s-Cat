@@ -17813,3 +17813,4 @@ https://t.me/neel_leen
 [04-Oct-25 15:49:55 - WARNING] - pyrogram.session.session - [Bot] Waiting for 3 seconds before continuing (required by "messages.EditMessage")
 [04-Oct-25 15:49:57 - WARNING] - pyrogram.session.session - [Bot] Waiting for 3 seconds before continuing (required by "messages.EditMessage")
 [04-Oct-25 15:49:58 - WARNING] - pyrogram.session.session - [Bot] Waiting for 3 seconds before continuing (required by "messages.EditMessage")
+[23-Nov-25 16:08:38 - INFO] - root - [DB] Connecting to MongoDB (sync)... Attempt 1/5

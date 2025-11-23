@@ -128,14 +128,8 @@ async def link_generator(client: Client, message: Message):
         interactive_users.discard(uid)
 
 
-@Bot.on_message(filters.command("bulk_custom_batch"))
+@Bot.on_message(filters.private & admin & filters.command("bulk_custom_batch"))
 async def bulk_custom_batch(client: Client, message: Message):
-    print("bulk_custom_batch handler called")
-    if message.chat.type != "private":
-        return await message.reply("❌ This command only works in private chat.")
-    uid = message.from_user.id
-    if not (uid == OWNER_ID or await db.admin_exist(uid)):
-        return await message.reply("❌ You are not authorized to use this command.")
     collected = []
     uid = message.from_user.id
     interactive_users.add(uid)
