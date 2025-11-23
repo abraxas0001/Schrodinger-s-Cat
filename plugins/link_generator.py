@@ -5,6 +5,7 @@ from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from bot import Bot
+from config import DISABLE_CHANNEL_BUTTON
 from helper_func import encode, get_message_id, admin, interactive_users, get_flood_wait_seconds
 
 
@@ -206,6 +207,22 @@ async def custom_batch(client: Client, message: Message):
 
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
         await message.reply(f"<b>✅ Here is your custom batch link:</b>\n\n{link}", reply_markup=reply_markup)
+
+        # Attach share URL inline button to each copied message in DB channel (if enabled)
+        if not DISABLE_CHANNEL_BUTTON:
+            for mid in copied_ids:
+                attempts = 0
+                while True:
+                    try:
+                        await client.edit_message_reply_markup(client.db_channel.id, mid, reply_markup=reply_markup)
+                        break
+                    except FloodWait as e:
+                        await asyncio.sleep(get_flood_wait_seconds(e))
+                        attempts += 1
+                        if attempts > 3:
+                            break
+                    except Exception:
+                        break
         await message.reply("✅ Done.", reply_markup=ReplyKeyboardRemove())
     finally:
         interactive_users.discard(uid)
