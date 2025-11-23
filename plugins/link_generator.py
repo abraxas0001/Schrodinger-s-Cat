@@ -128,9 +128,8 @@ async def link_generator(client: Client, message: Message):
         interactive_users.discard(uid)
 
 
-@Bot.on_message(filters.private & filters.command("custom_batch"))
+@Bot.on_message(filters.private & admin & filters.command("custom_batch"))
 async def custom_batch(client: Client, message: Message):
-    print("custom_batch called")
     collected = []
     uid = message.from_user.id
     interactive_users.add(uid)
@@ -206,76 +205,5 @@ async def custom_batch(client: Client, message: Message):
                 except Exception:
                     pass
 
-    finally:
-        interactive_users.discard(uid)
-
-@Bot.on_message(filters.private & filters.command("bulk_custom_batch"))
-async def bulk_custom_batch(client: Client, message: Message):
-    collected = []
-    uid = message.from_user.id
-    interactive_users.add(uid)
-    try:
-        BATCH_KB = ReplyKeyboardMarkup([["STOP BATCH", "CANCEL BATCH"]], resize_keyboard=True)
-
-        await message.reply(
-            "Send all media files you want to include in the bulk batch.\nPress STOP BATCH to finish or CANCEL BATCH to abort.\n\nAll media will be forwarded to the database channel.",
-            reply_markup=BATCH_KB
-        )
-
-        cancelled = False
-        while True:
-            try:
-                user_msg = await client.ask(
-                    chat_id=message.chat.id,
-                    text="Waiting for media... (STOP BATCH to finish / CANCEL BATCH to abort)",
-                    timeout=90
-                )
-            except asyncio.TimeoutError:
-                # Timeout ends collection
-                break
-
-            txt = (user_msg.text or '').strip().upper() if user_msg.text else ''
-            if txt in ("STOP", "STOP BATCH"):
-                break
-            if txt in ("CANCEL", "CANCEL BATCH"):
-                cancelled = True
-                break
-
-            # Check if it's media
-            if not (user_msg.photo or user_msg.video or user_msg.document or user_msg.audio or user_msg.voice or user_msg.animation):
-                await user_msg.reply("❌ Please send media files only (photos, videos, documents, etc.)", quote=True)
-                continue
-
-            collected.append(user_msg.id)
-
-        if cancelled:
-            await message.reply("❌ Bulk custom batch cancelled.", reply_markup=ReplyKeyboardRemove())
-            return
-
-        await message.reply("✅ Bulk batch collection complete.", reply_markup=ReplyKeyboardRemove())
-
-        if not collected:
-            await message.reply("❌ No media was forwarded to the batch.")
-            return
-
-        # Sort collected IDs to ensure proper order
-        collected.sort()
-
-        encoded_ids = '-'.join(str(i) for i in collected)
-        string = f"bulk-{message.chat.id}-{encoded_ids}"
-        base64_string = await encode(string)
-        link = f"https://t.me/{client.username}?start={base64_string}"
-
-        reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-
-        await message.reply(
-            f"<b>✅ Bulk Custom Batch Complete!</b>\n\n"
-            f"📊 Media collected: {len(collected)} files\n\n"
-            f"🔗 <b>Shareable Batch Link:</b>\n{link}",
-            reply_markup=reply_markup
-        )
-
-    except Exception as e:
-        await message.reply(f"❌ An error occurred: {e}")
     finally:
         interactive_users.discard(uid)

@@ -94,13 +94,6 @@ async def start_command(client: Client, message: Message):
             except Exception as e:
                 print(f"Error decoding IDs: {e}")
                 return
-        elif argument[0] == "bulk":
-            try:
-                chat_id = int(argument[1])
-                ids = [int(a) for a in argument[2:]]
-            except Exception as e:
-                print(f"Error decoding bulk: {e}")
-                return
         elif len(argument) == 3 and argument[0] == "get":
             # old range format
             try:
@@ -115,10 +108,7 @@ async def start_command(client: Client, message: Message):
 
         temp_msg = await message.reply("<b>Please wait...</b>")
         try:
-            if argument[0] == "bulk":
-                messages = await get_messages(client, ids, chat_id)
-            else:
-                messages = await get_messages(client, ids)
+            messages = await get_messages(client, ids)
         except Exception as e:
             await message.reply_text("Something went wrong!")
             print(f"Error getting messages: {e}")
