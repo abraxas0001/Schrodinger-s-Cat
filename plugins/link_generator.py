@@ -275,9 +275,8 @@ async def bulk_custom_batch(client: Client, message: Message):
         # Sort collected IDs to ensure proper order
         collected.sort()
 
-        start_id = collected[0] * abs(client.db_channel.id)
-        end_id = collected[-1] * abs(client.db_channel.id)
-        string = f"get-{start_id}-{end_id}"
+        encoded_ids = '-'.join(str(i * abs(client.db_channel.id)) for i in collected)
+        string = f"batch-{encoded_ids}"
         base64_string = await encode(string)
         link = f"https://t.me/{client.username}?start={base64_string}"
 
