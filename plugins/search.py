@@ -6,7 +6,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait
 from bot import Bot
-from helper_func import encode, admin, is_subscribed
+from helper_func import encode, admin, is_subscribed, interactive_users
 from database.database import db
 
 # Store search results temporarily (user_id -> list of message_ids)
@@ -192,6 +192,11 @@ async def search_handler(client: Client, message: Message):
     """Handle text search queries with refined relevance ranking"""
     user_id = message.from_user.id
     
+    # Ignore queries from users currently in an interactive session (batch/ask flows)
+    if message.from_user.id in interactive_users:
+        # Silently skip processing during ask flows (user is in a batch/genlink session)
+        return
+
     # Check if user is banned
     banned_users = await db.get_ban_users()
     if user_id in banned_users:

@@ -164,4 +164,7 @@ def get_exp_time(seconds):
 subscribed = filters.create(is_subscribed)
 admin = filters.create(check_admin)
 
+# Users currently in interactive ask flows (suppress search handler for these users)
+interactive_users = set()
+
 #neel_leen on Tg :
