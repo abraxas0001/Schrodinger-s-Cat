@@ -71,6 +71,11 @@ PROTECT_CONTENT = True if os.environ.get('PROTECT_CONTENT', "True") == "True" el
 #Set true if you want Disable your Channel Posts Share button
 DISABLE_CHANNEL_BUTTON = os.environ.get("DISABLE_CHANNEL_BUTTON",None) == 'False'
 #--------------------------------------------
+# Custom batch configuration
+CUSTOM_BATCH_CONCURRENCY = int(os.environ.get("CUSTOM_BATCH_CONCURRENCY", "6"))
+CUSTOM_BATCH_MAX_RETRIES = int(os.environ.get("CUSTOM_BATCH_MAX_RETRIES", "20"))
+CUSTOM_BATCH_SEQUENTIAL_RETRIES = int(os.environ.get("CUSTOM_BATCH_SEQUENTIAL_RETRIES", "10"))
+#--------------------------------------------
 BOT_STATS_TEXT = "<b>BOT UPTIME</b>\n{uptime}"
 USER_REPLY_TEXT = "ʙᴀᴋᴋᴀ ! ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴍʏ ꜱᴇɴᴘᴀɪ!!"
 #--------------------------------------------

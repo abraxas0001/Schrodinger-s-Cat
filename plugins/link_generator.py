@@ -5,7 +5,7 @@ from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from bot import Bot
-from config import DISABLE_CHANNEL_BUTTON
+from config import DISABLE_CHANNEL_BUTTON, CUSTOM_BATCH_CONCURRENCY, CUSTOM_BATCH_MAX_RETRIES, CUSTOM_BATCH_SEQUENTIAL_RETRIES
 from helper_func import encode, get_message_id, admin, interactive_users, get_flood_wait_seconds
 
 
@@ -174,7 +174,7 @@ async def custom_batch(client: Client, message: Message):
             await message.reply("❌ No messages were added to batch.", reply_markup=ReplyKeyboardRemove())
             return
         # Copy all collected messages concurrently with limited concurrency and retry on FloodWait
-        async def copy_worker(seq_num, usr_msg, sem, max_retries=20):
+        async def copy_worker(seq_num, usr_msg, sem, max_retries=CUSTOM_BATCH_MAX_RETRIES):
             # Strong retry strategy: flood waits are handled by sleeping required time
             # Non-Flood exceptions are retried with exponential backoff
             attempts = 0
@@ -207,7 +207,7 @@ async def custom_batch(client: Client, message: Message):
                     await asyncio.sleep(backoff)
                     backoff = min(backoff * 2, 20)
 
-        sem = asyncio.Semaphore(6)
+        sem = asyncio.Semaphore(CUSTOM_BATCH_CONCURRENCY)
         tasks = [asyncio.create_task(copy_worker(s, m, sem)) for (s, m) in collected]
         total = len(tasks)
         success = 0
@@ -238,7 +238,7 @@ async def custom_batch(client: Client, message: Message):
                 seq_res = None
                 attempts = 0
                 backoff = 1
-                while attempts < 10:
+                while attempts < CUSTOM_BATCH_SEQUENTIAL_RETRIES:
                     try:
                         sent = await usr_msg.copy(client.db_channel.id, disable_notification=True)
                         seq_res = (seq_num, sent.id)
