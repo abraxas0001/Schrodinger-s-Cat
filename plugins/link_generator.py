@@ -205,7 +205,8 @@ async def custom_batch(client: Client, message: Message):
                 except Exception:
                     pass
 
-@Bot.on_message(filters.private & admin & filters.command("bulk_custom_batch"))
+    finally:
+        interactive_users.discard(uid)
 async def bulk_custom_batch(client: Client, message: Message):
     collected = []
     uid = message.from_user.id
