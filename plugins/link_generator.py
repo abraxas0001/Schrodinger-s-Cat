@@ -130,6 +130,7 @@ async def link_generator(client: Client, message: Message):
 @Bot.on_message(filters.private & admin & filters.command("custom_batch"))
 async def custom_batch(client: Client, message: Message):
     collected = []
+    seq = 0
     uid = message.from_user.id
     interactive_users.add(uid)
     try:
@@ -163,7 +164,8 @@ async def custom_batch(client: Client, message: Message):
                 while True:
                     try:
                         sent = await user_msg.copy(client.db_channel.id, disable_notification=True)
-                        collected.append(sent.id)
+                        seq += 1
+                        collected.append((seq, sent.id))
                         await asyncio.sleep(0.4)  # small delay to prevent flood
                         break
                     except FloodWait as e:
@@ -182,9 +184,12 @@ async def custom_batch(client: Client, message: Message):
         if not collected:
             await message.reply("❌ No messages were added to batch.", reply_markup=ReplyKeyboardRemove())
             return
+        # Sort collected according to the original sending order (seq)
+        collected.sort(key=lambda x: x[0])
+        collected_ids = [item[1] for item in collected]
 
-        start_id = collected[0] * abs(client.db_channel.id)
-        end_id = collected[-1] * abs(client.db_channel.id)
+        start_id = collected_ids[0] * abs(client.db_channel.id)
+        end_id = collected_ids[-1] * abs(client.db_channel.id)
         string = f"get-{start_id}-{end_id}"
         base64_string = await encode(string)
         link = f"https://t.me/{client.username}?start={base64_string}"
