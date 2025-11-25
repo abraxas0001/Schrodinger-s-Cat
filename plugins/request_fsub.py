@@ -119,7 +119,19 @@ async def add_force_sub(client: Client, message: Message):
         )
 
     except Exception as e:
-        return await temp.edit(f"❌ Failed to add chat:\n<code>{chat_id}</code>\n\n<i>{e}</i>")
+        error_msg = str(e)
+        if "CHANNEL_INVALID" in error_msg:
+            return await temp.edit(
+                f"❌ <b>Channel Access Error!</b>\n\n"
+                f"<b>Channel ID:</b> <code>{chat_id}</code>\n\n"
+                f"<b>Possible causes:</b>\n"
+                f"• Bot is not added to the channel\n"
+                f"• Bot is not an admin in the channel\n"
+                f"• Channel ID is incorrect\n"
+                f"• Channel is private and bot isn't invited\n\n"
+                f"<b>Solution:</b> Add the bot as admin to the channel first."
+            )
+        return await temp.edit(f"❌ Failed to add chat:\n<code>{chat_id}</code>\n\n<i>{error_msg}</i>")
 
 
 
