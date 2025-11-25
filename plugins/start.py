@@ -153,7 +153,18 @@ async def start_command(client: Client, message: Message):
                     caption = f"{caption}\n{caption_append}"
 
             caption_to_send = caption or None
-            reply_markup = CUSTOM_BUTTON
+            # Create share URL for individual media
+            msg_index = messages.index(msg)
+            original_id = ids[msg_index] if isinstance(ids, list) else ids[msg_index]
+            share_url = f"https://t.me/{client.username}?start={await encode(f'get-{original_id}')}"
+            
+            # Create reply markup with share button and custom button
+            buttons = [
+                [InlineKeyboardButton("🔗 Share Link", url=share_url)],
+                [InlineKeyboardButton("𝗰𝗹𝗶𝗰𝗸 𝗵𝗲𝗿𝗲 𝗳𝗼𝗿 𝗺𝗼𝗿𝗲 ❤️", url="https://t.me/HxHLinks")]
+            ]
+            reply_markup = InlineKeyboardMarkup(buttons)
+            
             copy_kwargs = {
                 'chat_id': message.from_user.id,
                 'reply_markup': reply_markup,
@@ -171,7 +182,7 @@ async def start_command(client: Client, message: Message):
 
         if FILE_AUTO_DELETE > 0:
             notification_msg = await message.reply(
-                f"<b>Tʜɪs Fɪʟᴇ ᴡɪʟʟ ʙᴇ Dᴇʟᴇᴛᴇᴅ ɪɴ  {get_exp_time(FILE_AUTO_DELETE)}. Pʟᴇᴀsᴇ sᴀᴠᴇ ᴏʀ ғᴏʀᴡᴀʀᴅ ɪᴛ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ʙᴇғᴏʀᴇ ɪᴛ ɢᴇᴛs Dᴇʟᴇᴛᴇᴅ.</b>"
+                f"<b>Tʜɪs Fɪʟᴇ ᴡɪʟʟ ʙᴇ Dᴇʟᴇᴛᴇᴅ ɪɴ  {get_exp_time(FILE_AUTO_DELETE)}. Pʟᴇᴀsᴇ sᴀᴠᴇ ᴏʀ ғᴏʀᴡᴀʀᴅ ᴛʜᴇ sʜᴀʀᴇᴅ ʟɪɴᴋ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ʙᴇғᴏʀᴇ ɪᴛ ɢᴇᴛs Dᴇʟᴇᴛᴇᴅ.</b>"
             )
             reload_url = (
                 f"https://t.me/{client.username}?start={message.command[1]}"
