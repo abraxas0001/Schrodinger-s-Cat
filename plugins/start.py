@@ -5,7 +5,6 @@ import re
 import sys
 import time
 from datetime import datetime, timedelta
-from urllib.parse import quote
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode, ChatAction
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, ReplyKeyboardMarkup, ChatInviteLink, ChatPrivileges
@@ -85,38 +84,24 @@ async def start_command(client: Client, message: Message):
         ids = []
         if argument[0] == "get" and len(argument) == 2:
             try:
-                decoded_id = int(int(argument[1]) / abs(client.db_channel.id))
-                if decoded_id <= 0:
-                    await message.reply_text("Invalid link! The file may have been deleted or the link is corrupted.")
-                    return
-                ids = [decoded_id]
+                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
             except Exception as e:
                 print(f"Error decoding ID: {e}")
-                await message.reply_text("Invalid link format!")
                 return
         elif argument[0] == "batch":
             try:
-                decoded_ids = [int(int(a) / abs(client.db_channel.id)) for a in argument[1:]]
-                if any(id <= 0 for id in decoded_ids):
-                    await message.reply_text("Invalid link! Some files may have been deleted or the link is corrupted.")
-                    return
-                ids = decoded_ids
+                ids = [int(int(a) / abs(client.db_channel.id)) for a in argument[1:]]
             except Exception as e:
                 print(f"Error decoding IDs: {e}")
-                await message.reply_text("Invalid link format!")
                 return
         elif len(argument) == 3 and argument[0] == "get":
             # old range format
             try:
                 start = int(int(argument[1]) / abs(client.db_channel.id))
                 end = int(int(argument[2]) / abs(client.db_channel.id))
-                if start <= 0 or end <= 0:
-                    await message.reply_text("Invalid link! The files may have been deleted or the link is corrupted.")
-                    return
                 ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
             except Exception as e:
                 print(f"Error decoding range: {e}")
-                await message.reply_text("Invalid link format!")
                 return
         else:
             return
@@ -125,7 +110,7 @@ async def start_command(client: Client, message: Message):
         try:
             messages = await get_messages(client, ids)
         except Exception as e:
-            await message.reply_text("Failed to retrieve the file. It may have been deleted or is no longer available.")
+            await message.reply_text("Something went wrong!")
             print(f"Error getting messages: {e}")
             return
         finally:
@@ -168,19 +153,7 @@ async def start_command(client: Client, message: Message):
                     caption = f"{caption}\n{caption_append}"
 
             caption_to_send = caption or None
-            # Create share URL for individual media
-            msg_index = messages.index(msg)
-            original_id = ids[msg_index] if isinstance(ids, list) else ids[msg_index]
-            direct_link = f"https://t.me/{client.username}?start={await encode(f'get-{original_id}')}"
-            share_url = f"https://telegram.me/share/url?url={quote(direct_link)}"
-            
-            # Create reply markup with share button and custom button
-            buttons = [
-                [InlineKeyboardButton("🔗 Share Link", url=share_url)],
-                [InlineKeyboardButton("𝗰𝗹𝗶𝗰𝗸 𝗵𝗲𝗿𝗲 𝗳𝗼𝗿 𝗺𝗼𝗿𝗲 ❤️", url="https://t.me/HxHLinks")]
-            ]
-            reply_markup = InlineKeyboardMarkup(buttons)
-            
+            reply_markup = CUSTOM_BUTTON
             copy_kwargs = {
                 'chat_id': message.from_user.id,
                 'reply_markup': reply_markup,
