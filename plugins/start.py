@@ -85,24 +85,38 @@ async def start_command(client: Client, message: Message):
         ids = []
         if argument[0] == "get" and len(argument) == 2:
             try:
-                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+                decoded_id = int(int(argument[1]) / abs(client.db_channel.id))
+                if decoded_id <= 0:
+                    await message.reply_text("Invalid link! The file may have been deleted or the link is corrupted.")
+                    return
+                ids = [decoded_id]
             except Exception as e:
                 print(f"Error decoding ID: {e}")
+                await message.reply_text("Invalid link format!")
                 return
         elif argument[0] == "batch":
             try:
-                ids = [int(int(a) / abs(client.db_channel.id)) for a in argument[1:]]
+                decoded_ids = [int(int(a) / abs(client.db_channel.id)) for a in argument[1:]]
+                if any(id <= 0 for id in decoded_ids):
+                    await message.reply_text("Invalid link! Some files may have been deleted or the link is corrupted.")
+                    return
+                ids = decoded_ids
             except Exception as e:
                 print(f"Error decoding IDs: {e}")
+                await message.reply_text("Invalid link format!")
                 return
         elif len(argument) == 3 and argument[0] == "get":
             # old range format
             try:
                 start = int(int(argument[1]) / abs(client.db_channel.id))
                 end = int(int(argument[2]) / abs(client.db_channel.id))
+                if start <= 0 or end <= 0:
+                    await message.reply_text("Invalid link! The files may have been deleted or the link is corrupted.")
+                    return
                 ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
             except Exception as e:
                 print(f"Error decoding range: {e}")
+                await message.reply_text("Invalid link format!")
                 return
         else:
             return
@@ -111,7 +125,7 @@ async def start_command(client: Client, message: Message):
         try:
             messages = await get_messages(client, ids)
         except Exception as e:
-            await message.reply_text("Something went wrong!")
+            await message.reply_text("Failed to retrieve the file. It may have been deleted or is no longer available.")
             print(f"Error getting messages: {e}")
             return
         finally:
