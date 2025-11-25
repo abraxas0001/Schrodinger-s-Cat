@@ -143,15 +143,11 @@ async def custom_batch(client: Client, message: Message):
 
         cancelled = False
         while True:
-            try:
-                user_msg = await client.ask(
-                    chat_id=message.chat.id,
-                    text="Waiting... (STOP BATCH to finish / CANCEL BATCH to abort)",
-                    timeout=90
-                )
-            except asyncio.TimeoutError:
-                # Timeout ends collection (if nothing collected, it's effectively cancel)
-                break
+            user_msg = await client.ask(
+                chat_id=message.chat.id,
+                text="Waiting... (STOP BATCH to finish / CANCEL BATCH to abort)",
+                timeout=None
+            )
 
             txt = (user_msg.text or '').strip().upper() if user_msg.text else ''
             if txt in ("STOP", "STOP BATCH"):
