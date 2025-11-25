@@ -5,6 +5,7 @@ import re
 import sys
 import time
 from datetime import datetime, timedelta
+from urllib.parse import quote
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode, ChatAction
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, ReplyKeyboardMarkup, ChatInviteLink, ChatPrivileges
@@ -156,7 +157,8 @@ async def start_command(client: Client, message: Message):
             # Create share URL for individual media
             msg_index = messages.index(msg)
             original_id = ids[msg_index] if isinstance(ids, list) else ids[msg_index]
-            share_url = f"https://t.me/{client.username}?start={await encode(f'get-{original_id}')}"
+            direct_link = f"https://t.me/{client.username}?start={await encode(f'get-{original_id}')}"
+            share_url = f"https://telegram.me/share/url?url={quote(direct_link)}"
             
             # Create reply markup with share button and custom button
             buttons = [
