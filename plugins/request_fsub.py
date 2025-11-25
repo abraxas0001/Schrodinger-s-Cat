@@ -128,8 +128,13 @@ async def add_force_sub(client: Client, message: Message):
                 f"• Bot is not added to the channel\n"
                 f"• Bot is not an admin in the channel\n"
                 f"• Channel ID is incorrect\n"
-                f"• Channel is private and bot isn't invited\n\n"
-                f"<b>Solution:</b> Add the bot as admin to the channel first."
+                f"• Channel is private and bot isn't invited\n"
+                f"• <b>Channel has >200 members:</b> Convert to supergroup first\n\n"
+                f"<b>To add bot to channel with >200 members:</b>\n"
+                f"1. Go to channel settings → 'Manage Channel'\n"
+                f"2. Click 'Convert to Supergroup'\n"
+                f"3. Add bot as admin in the supergroup\n"
+                f"4. Try /addchnl again"
             )
         return await temp.edit(f"❌ Failed to add chat:\n<code>{chat_id}</code>\n\n<i>{error_msg}</i>")
 
