@@ -43,7 +43,7 @@ async def cb_handler(client: Bot, query: CallbackQuery):
                     [InlineKeyboardButton("• ʏᴏᴜ ᴀʀᴇ ᴡᴇʟᴄᴏᴍᴇ •", url="https://t.me/HxHLinks")],
                     [
                         InlineKeyboardButton("• ᴅɪsᴄʟᴀɪᴍᴇʀ", callback_data='about'),
-                        InlineKeyboardButton('ᴄʀᴇᴀᴛᴏʀ •', url="https://t.me/chexyy")
+                        InlineKeyboardButton('ᴄʀᴇᴀᴛᴏʀ •', url="https://t.me/LordShekhar")
                     ]
                 ])
             )
